@@ -450,13 +450,11 @@
    Compliance IA — demo SPA (vanilla JS, sin frameworks)
    ========================================================= */
 
-// La API key NUNCA debe vivir en el frontend en producción.
-// Aquí se deja vacía a propósito: configúrala como variable de
-// entorno ANTHROPIC_API_KEY en tu backend/proxy y sustituye esta
-// constante por una llamada a tu propio endpoint.
-const ANTHROPIC_API_KEY = ""; // process.env.ANTHROPIC_API_KEY
+// La API key vive SOLO en el servidor (server.js), nunca aquí.
+// El frontend llama a nuestro propio proxy, que reenvía la petición
+// a Anthropic añadiendo la key server-side.
 const ANTHROPIC_MODEL = "claude-sonnet-4-6";
-const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_ENDPOINT = "/api/messages";
 
 const QUESTIONS = [
   {
@@ -795,20 +793,12 @@ Incluye entre 3 y 5 riesgos, entre 3 y 6 políticas y entre 3 y 5 herramientas r
 }
 
 async function callAnthropic(promptText) {
-  if (!ANTHROPIC_API_KEY) {
-    throw new Error(
-      "Falta configurar la API key de Anthropic. Define la variable de entorno ANTHROPIC_API_KEY (o conecta esta demo a un backend/proxy que la inyecte de forma segura) y vuelve a intentarlo."
-    );
-  }
-
   let response;
   try {
     response = await fetch(ANTHROPIC_ENDPOINT, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: ANTHROPIC_MODEL,
@@ -817,7 +807,7 @@ async function callAnthropic(promptText) {
       })
     });
   } catch (networkErr) {
-    throw new Error("No se ha podido contactar con la API de Anthropic. Revisa tu conexión.");
+    throw new Error("No se ha podido contactar con el servidor. Revisa tu conexión.");
   }
 
   if (!response.ok) {
