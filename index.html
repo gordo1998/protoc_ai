@@ -802,7 +802,7 @@ async function callAnthropic(promptText) {
       },
       body: JSON.stringify({
         model: ANTHROPIC_MODEL,
-        max_tokens: 1000,
+        max_tokens: 2000,
         messages: [{ role: "user", content: promptText }]
       })
     });
@@ -828,18 +828,27 @@ async function callAnthropic(promptText) {
     throw new Error("La API no ha devuelto contenido válido.");
   }
 
-  const cleaned = rawText
+  let cleaned = rawText
     .trim()
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/, "")
     .replace(/```\s*$/, "")
     .trim();
 
+  // Por si la IA añade texto antes/después del JSON pese a las instrucciones,
+  // nos quedamos solo con lo que hay entre la primera "{" y la última "}".
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
   let parsed;
   try {
     parsed = JSON.parse(cleaned);
   } catch (e) {
-    throw new Error("No se ha podido interpretar la respuesta de la IA como JSON válido.");
+    console.error("Respuesta cruda de la IA que no se pudo parsear:", rawText);
+    throw new Error("No se ha podido interpretar la respuesta de la IA como JSON válido. Revisa la consola del navegador (F12) para ver la respuesta completa.");
   }
 
   return parsed;
