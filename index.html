@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compliance IA — Diagnóstico de Cumplimiento de IA</title>
+<style>
+  :root {
+    --red: #e5484d;
+    --red-bg: #fdecec;
+    --orange: #f5a524;
+    --orange-bg: #fef3e0;
+    --green: #2fa84f;
+    --green-bg: #e9f7ee;
+    --ink: #1a1a1a;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --brand: #4338ca;
+    --brand-light: #eef2ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .logo .mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--brand);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px 80px;
+  }
+
+  .screen {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  /* ---------- Intro ---------- */
+  .intro {
+    text-align: center;
+    padding-top: 40px;
+  }
+  .intro h1 {
+    font-size: 34px;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+  }
+  .intro p {
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto 32px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--brand);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .btn:hover { background: #3730a3; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+  }
+  .btn.secondary {
+    background: white;
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+  .btn.secondary:hover { background: #f9fafb; }
+
+  /* ---------- Progress ---------- */
+  .progress-wrap {
+    margin-bottom: 32px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .progress-bar {
+    height: 6px;
+    background: #f0f0f2;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--brand);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  /* ---------- Question ---------- */
+  .question h2 {
+    font-size: 24px;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .question .hint {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    user-select: none;
+  }
+  .option:hover { border-color: #c7c9f5; background: #fafaff; }
+  .option.selected {
+    border-color: var(--brand);
+    background: var(--brand-light);
+    font-weight: 600;
+  }
+  .option .check {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 1.5px solid #c9cbd1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .option.multi .check { border-radius: 5px; }
+  .option.selected .check {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: white;
+    font-size: 12px;
+  }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-row .spacer { flex: 1; }
+
+  /* ---------- Loading ---------- */
+  .loading-screen {
+    text-align: center;
+    padding-top: 100px;
+  }
+  .spinner {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 32px;
+    border-radius: 50%;
+    border: 5px solid var(--brand-light);
+    border-top-color: var(--brand);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    min-height: 26px;
+    transition: opacity 0.2s ease;
+  }
+  .loading-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  /* ---------- Error ---------- */
+  .error-box {
+    background: var(--red-bg);
+    border: 1px solid #f6c6c8;
+    color: #a5222a;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ---------- Report ---------- */
+  .report-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .report-header h2 {
+    font-size: 26px;
+    margin: 0 0 8px;
+  }
+  .report-header .summary {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  .score-circle {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    border: 10px solid;
+  }
+  .score-circle .num {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .score-circle .max {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .level-badge {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+  }
+
+  .level-alto { color: var(--red); }
+  .score-circle.alto { border-color: var(--red); background: var(--red-bg); }
+  .level-badge.alto { background: var(--red-bg); color: var(--red); }
+
+  .level-medio { color: var(--orange); }
+  .score-circle.medio { border-color: var(--orange); background: var(--orange-bg); }
+  .level-badge.medio { background: var(--orange-bg); color: var(--orange); }
+
+  .level-bajo { color: var(--green); }
+  .score-circle.bajo { border-color: var(--green); background: var(--green-bg); }
+  .level-badge.bajo { background: var(--green-bg); color: var(--green); }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 40px 0 16px;
+  }
+
+  .risk-card {
+    display: flex;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .risk-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .risk-dot.alta { background: var(--red); }
+  .risk-dot.media { background: var(--orange); }
+  .risk-card h3 {
+    margin: 0 0 4px;
+    font-size: 15.5px;
+  }
+  .risk-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .risk-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: auto;
+    flex-shrink: 0;
+    height: fit-content;
+  }
+  .risk-tag.alta { background: var(--red-bg); color: var(--red); }
+  .risk-tag.media { background: var(--orange-bg); color: var(--orange); }
+
+  .policy-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .policy-item:last-child { border-bottom: none; }
+  .policy-num {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--brand);
+    background: var(--brand-light);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .policy-text {
+    font-size: 14.5px;
+    line-height: 1.6;
+    padding-top: 5px;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .tool-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .tool-card h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+  }
+  .tool-card p {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .price-badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+  .price-badge.gratis { background: var(--green-bg); color: var(--green); }
+  .price-badge.freemium { background: var(--orange-bg); color: var(--orange); }
+  .price-badge.pago { background: #ede9fe; color: #6d28d9; }
+
+  .report-footer {
+    text-align: center;
+    margin-top: 48px;
+  }
+
+  @media (max-width: 560px) {
+    .topbar { padding: 16px 20px; }
+    main { padding: 24px 16px 60px; }
+    .intro h1 { font-size: 27px; }
+    .tools-grid { grid-template-columns: 1fr; }
+    .score-circle { width: 130px; height: 130px; }
+    .score-circle .num { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar">
+    <div class="logo"><span class="mark">CI</span> Compliance IA</div>
+  </div>
+  <main>
+    <div class="screen" id="screen"></div>
+  </main>
+</div>
+
+<script>
+/* =========================================================
+   Compliance IA — demo SPA (vanilla JS, sin frameworks)
+   ========================================================= */
+
+// La API key NUNCA debe vivir en el frontend en producción.
+// Aquí se deja vacía a propósito: configúrala como variable de
+// entorno ANTHROPIC_API_KEY en tu backend/proxy y sustituye esta
+// constante por una llamada a tu propio endpoint.
+const ANTHROPIC_API_KEY = ""; // process.env.ANTHROPIC_API_KEY
+const ANTHROPIC_MODEL = "claude-sonnet-4-6";
+const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
+
+const QUESTIONS = [
+  {
+    id: "sector",
+    text: "¿A qué se dedica tu empresa?",
+    hint: "Selecciona una opción",
+    type: "single",
+    options: [
+      "Agencia de marketing digital",
+      "E-commerce",
+      "Gestoría o asesoría",
+      "Clínica o centro de salud",
+      "Despacho legal",
+      "Otro"
+    ]
+  },
+  {
+    id: "tamano",
+    text: "¿Cuántas personas forman el equipo?",
+    hint: "Selecciona una opción",
+    type: "single",
+    options: ["1–5", "6–20", "21–50", "Más de 50"]
+  },
+  {
+    id: "herramientas",
+    text: "¿Qué herramientas de IA usáis en el día a día?",
+    hint: "Puedes seleccionar varias",
+    type: "multi",
+    options: [
+      "ChatGPT gratuito",
+      "ChatGPT Enterprise",
+      "Microsoft Copilot",
+      "Google Gemini",
+      "Herramientas propias",
+      "No usamos IA"
+    ]
+  },
+  {
+    id: "tipoDatos",
+    text: "¿Qué tipo de datos de clientes manejáis?",
+    hint: "Puedes seleccionar varios",
+    type: "multi",
+    options: [
+      "Nombres y emails",
+      "Datos financieros",
+      "Datos de salud",
+      "DNI o documentos",
+      "Comportamiento web o publicitario",
+      "No manejamos datos"
+    ]
+  },
+  {
+    id: "datosEnIA",
+    text: "¿Metéis datos de clientes en herramientas de IA?",
+    hint: "Selecciona una opción",
+    type: "single",
+    options: [
+      "Sí, habitualmente",
+      "A veces, sin protocolo claro",
+      "Raramente",
+      "No, nunca"
+    ]
+  },
+  {
+    id: "politicaInterna",
+    text: "¿Tenéis una política interna sobre el uso de IA?",
+    hint: "Selecciona una opción",
+    type: "single",
+    options: [
+      "Sí, documentada",
+      "Algo informal",
+      "No tenemos",
+      "No lo habíamos pensado"
+    ]
+  },
+  {
+    id: "dpa",
+    text: "¿Tenéis Acuerdos de Tratamiento de Datos (DPA) firmados con vuestros proveedores de IA?",
+    hint: "Selecciona una opción",
+    type: "single",
+    options: [
+      "Sí, firmados",
+      "No lo sabemos",
+      "No tenemos",
+      "¿Qué es un DPA?"
+    ]
+  },
+  {
+    id: "aiAct",
+    text: "¿El equipo conoce el Reglamento Europeo de IA (AI Act)?",
+    hint: "Selecciona una opción",
+    type: "single",
+    options: [
+      "Sí, bien",
+      "Lo hemos oído",
+      "No lo conocemos",
+      "¿El AI qué?"
+    ]
+  }
+];
+
+const LOADING_MESSAGES = [
+  "Evaluando exposición regulatoria...",
+  "Clasificando riesgos RGPD y AI Act...",
+  "Cruzando respuestas con marco normativo español...",
+  "Detectando políticas internas faltantes...",
+  "Seleccionando herramientas recomendadas...",
+  "Generando informe final..."
+];
+
+// ---------------- State ----------------
+let state = {
+  screen: "intro", // intro | question | loading | report | error
+  currentQuestion: 0,
+  answers: {}, // id -> string | string[]
+  report: null,
+  errorMessage: ""
+};
+
+const screenEl = document.getElementById("screen");
+
+function render() {
+  if (state.screen === "intro") renderIntro();
+  else if (state.screen === "question") renderQuestion();
+  else if (state.screen === "loading") renderLoading();
+  else if (state.screen === "report") renderReport();
+  else if (state.screen === "error") renderError();
+}
+
+// ---------------- Intro ----------------
+function renderIntro() {
+  screenEl.innerHTML = `
+    <div class="intro">
+      <h1>Diagnóstico de Cumplimiento de IA</h1>
+      <p>Responde 8 preguntas sobre cómo usa tu empresa la inteligencia artificial y recibe en segundos un informe de riesgo con recomendaciones adaptadas al RGPD y al AI Act.</p>
+      <button class="btn" id="startBtn">Empezar diagnóstico</button>
+    </div>
+  `;
+  document.getElementById("startBtn").addEventListener("click", () => {
+    state.screen = "question";
+    state.currentQuestion = 0;
+    render();
+  });
+}
+
+// ---------------- Question ----------------
+function renderQuestion() {
+  const idx = state.currentQuestion;
+  const q = QUESTIONS[idx];
+  const total = QUESTIONS.length;
+  const progressPct = Math.round(((idx) / total) * 100 + (100 / total) * 0.15);
+  const selected = state.answers[q.id];
+
+  const optionsHtml = q.options.map((opt) => {
+    const isSelected = q.type === "single"
+      ? selected === opt
+      : Array.isArray(selected) && selected.includes(opt);
+    return `
+      <div class="option ${q.type === 'multi' ? 'multi' : ''} ${isSelected ? 'selected' : ''}" data-opt="${escapeAttr(opt)}">
+        <span class="check">${isSelected ? "✓" : ""}</span>
+        <span>${opt}</span>
+      </div>
+    `;
+  }).join("");
+
+  screenEl.innerHTML = `
+    <div class="question">
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Pregunta ${idx + 1} de ${total}</span>
+          <span>${Math.min(100, Math.round(((idx + 1) / total) * 100))}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(((idx) / total) * 100)}%"></div></div>
+      </div>
+      <h2>${q.text}</h2>
+      <p class="hint">${q.hint}</p>
+      <div class="options">${optionsHtml}</div>
+      <div class="nav-row">
+        ${idx > 0 ? `<button class="btn secondary" id="backBtn">Atrás</button>` : `<span></span>`}
+        <span class="spacer"></span>
+        <button class="btn" id="nextBtn" ${!isAnswered(q) ? "disabled" : ""}>${idx === total - 1 ? "Ver informe" : "Siguiente"}</button>
+      </div>
+    </div>
+  `;
+
+  screenEl.querySelectorAll(".option").forEach((el) => {
+    el.addEventListener("click", () => {
+      const opt = el.getAttribute("data-opt");
+      selectOption(q, opt);
+    });
+  });
+
+  const backBtn = document.getElementById("backBtn");
+  if (backBtn) backBtn.addEventListener("click", () => {
+    state.currentQuestion -= 1;
+    render();
+  });
+
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    if (!isAnswered(q)) return;
+    if (idx === total - 1) {
+      startDiagnosis();
+    } else {
+      state.currentQuestion += 1;
+      render();
+    }
+  });
+}
+
+function isAnswered(q) {
+  const v = state.answers[q.id];
+  if (q.type === "single") return typeof v === "string" && v.length > 0;
+  return Array.isArray(v) && v.length > 0;
+}
+
+function selectOption(q, opt) {
+  if (q.type === "single") {
+    state.answers[q.id] = opt;
+  } else {
+    const current = Array.isArray(state.answers[q.id]) ? state.answers[q.id].slice() : [];
+    const i = current.indexOf(opt);
+    if (i >= 0) current.splice(i, 1);
+    else current.push(opt);
+    state.answers[q.id] = current;
+  }
+  render();
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/"/g, "&quot;");
+}
+
+// ---------------- Loading ----------------
+let loadingInterval = null;
+
+function renderLoading() {
+  screenEl.innerHTML = `
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <div class="loading-msg" id="loadingMsg">${LOADING_MESSAGES[0]}</div>
+      <div class="loading-sub">Esto puede tardar unos segundos</div>
+    </div>
+  `;
+  let i = 0;
+  clearInterval(loadingInterval);
+  loadingInterval = setInterval(() => {
+    i = (i + 1) % LOADING_MESSAGES.length;
+    const el = document.getElementById("loadingMsg");
+    if (!el) { clearInterval(loadingInterval); return; }
+    el.style.opacity = 0;
+    setTimeout(() => {
+      el.textContent = LOADING_MESSAGES[i];
+      el.style.opacity = 1;
+    }, 200);
+  }, 1600);
+}
+
+function stopLoadingAnimation() {
+  clearInterval(loadingInterval);
+  loadingInterval = null;
+}
+
+// ---------------- Error ----------------
+function renderError() {
+  screenEl.innerHTML = `
+    <div class="question">
+      <div class="error-box">
+        <strong>No hemos podido generar el informe.</strong><br>
+        ${escapeHtml(state.errorMessage || "Ha ocurrido un error inesperado al conectar con la IA.")}
+      </div>
+      <div class="nav-row">
+        <button class="btn secondary" id="retryBtn">Volver a intentar</button>
+        <span class="spacer"></span>
+        <button class="btn" id="restartBtn">Empezar de nuevo</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("retryBtn").addEventListener("click", startDiagnosis);
+  document.getElementById("restartBtn").addEventListener("click", resetAll);
+}
+
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ---------------- Diagnosis (API call) ----------------
+async function startDiagnosis() {
+  state.screen = "loading";
+  render();
+
+  try {
+    const report = await callAnthropic(buildPrompt(state.answers));
+    state.report = report;
+    stopLoadingAnimation();
+    state.screen = "report";
+    render();
+  } catch (err) {
+    stopLoadingAnimation();
+    state.errorMessage = err && err.message ? err.message : String(err);
+    state.screen = "error";
+    render();
+  }
+}
+
+function buildPrompt(answers) {
+  const perfil = QUESTIONS.map((q) => {
+    const v = answers[q.id];
+    const valStr = Array.isArray(v) ? v.join(", ") : v;
+    return `- ${q.text} => ${valStr}`;
+  }).join("\n");
+
+  return `Eres un consultor experto en cumplimiento normativo de inteligencia artificial (RGPD y Reglamento Europeo de IA / AI Act) especializado en PYMEs españolas.
+
+Analiza el siguiente perfil de una empresa a partir de sus respuestas a un cuestionario de diagnóstico:
+
+${perfil}
+
+Genera un informe de riesgo de cumplimiento. Responde ÚNICAMENTE con un JSON válido (sin texto adicional, sin markdown, sin backticks) con exactamente esta estructura:
+
+{
+  "score": número entero 0-100 (100 = riesgo máximo),
+  "nivel": "Alto" | "Medio" | "Bajo",
+  "resumen": "frase corta y concreta sobre su situación de cumplimiento",
+  "riesgos": [
+    {"titulo": "...", "descripcion": "...", "gravedad": "alta" | "media"}
+  ],
+  "politicas": ["acción concreta 1", "acción concreta 2", "..."],
+  "herramientas": [
+    {"nombre": "...", "uso": "...", "precio": "Gratis" | "Freemium" | "De pago"}
+  ]
+}
+
+Incluye entre 3 y 5 riesgos, entre 3 y 6 políticas y entre 3 y 5 herramientas recomendadas, todo en español y adaptado al sector y tamaño de la empresa descritos arriba.`;
+}
+
+async function callAnthropic(promptText) {
+  if (!ANTHROPIC_API_KEY) {
+    throw new Error(
+      "Falta configurar la API key de Anthropic. Define la variable de entorno ANTHROPIC_API_KEY (o conecta esta demo a un backend/proxy que la inyecte de forma segura) y vuelve a intentarlo."
+    );
+  }
+
+  let response;
+  try {
+    response = await fetch(ANTHROPIC_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 1000,
+        messages: [{ role: "user", content: promptText }]
+      })
+    });
+  } catch (networkErr) {
+    throw new Error("No se ha podido contactar con la API de Anthropic. Revisa tu conexión.");
+  }
+
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const errJson = await response.json();
+      detail = errJson && errJson.error && errJson.error.message ? errJson.error.message : "";
+    } catch (e) {}
+    throw new Error(`Error de la API (${response.status}). ${detail}`);
+  }
+
+  const data = await response.json();
+  const rawText = data && data.content && data.content[0] && data.content[0].text
+    ? data.content[0].text
+    : "";
+
+  if (!rawText) {
+    throw new Error("La API no ha devuelto contenido válido.");
+  }
+
+  const cleaned = rawText
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/, "")
+    .replace(/```\s*$/, "")
+    .trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (e) {
+    throw new Error("No se ha podido interpretar la respuesta de la IA como JSON válido.");
+  }
+
+  return parsed;
+}
+
+// ---------------- Report ----------------
+function levelClass(nivel) {
+  const n = (nivel || "").toLowerCase();
+  if (n.startsWith("alt")) return "alto";
+  if (n.startsWith("med")) return "medio";
+  return "bajo";
+}
+
+function priceClass(precio) {
+  const p = (precio || "").toLowerCase();
+  if (p.includes("grat")) return "gratis";
+  if (p.includes("free")) return "freemium";
+  return "pago";
+}
+
+function renderReport() {
+  const r = state.report || {};
+  const lvl = levelClass(r.nivel);
+  const score = typeof r.score === "number" ? r.score : 0;
+
+  const riesgosHtml = (r.riesgos || []).map((risk) => `
+    <div class="risk-card">
+      <div class="risk-dot ${risk.gravedad}"></div>
+      <div>
+        <h3>${escapeHtml(risk.titulo || "")}</h3>
+        <p>${escapeHtml(risk.descripcion || "")}</p>
+      </div>
+      <span class="risk-tag ${risk.gravedad}">${escapeHtml(risk.gravedad || "")}</span>
+    </div>
+  `).join("");
+
+  const politicasHtml = (r.politicas || []).map((p, i) => `
+    <div class="policy-item">
+      <div class="policy-num">${String(i + 1).padStart(2, "0")}</div>
+      <div class="policy-text">${escapeHtml(p)}</div>
+    </div>
+  `).join("");
+
+  const herramientasHtml = (r.herramientas || []).map((t) => `
+    <div class="tool-card">
+      <h3>${escapeHtml(t.nombre || "")}</h3>
+      <p>${escapeHtml(t.uso || "")}</p>
+      <span class="price-badge ${priceClass(t.precio)}">${escapeHtml(t.precio || "")}</span>
+    </div>
+  `).join("");
+
+  screenEl.innerHTML = `
+    <div class="report">
+      <div class="report-header">
+        <div class="score-circle ${lvl}">
+          <div class="num">${score}</div>
+          <div class="max">/ 100</div>
+        </div>
+        <div class="level-badge ${lvl}">Riesgo ${escapeHtml(r.nivel || "")}</div>
+        <h2>Informe de cumplimiento</h2>
+        <p class="summary">${escapeHtml(r.resumen || "")}</p>
+      </div>
+
+      <div class="section-title">Riesgos identificados</div>
+      ${riesgosHtml || "<p>Sin riesgos identificados.</p>"}
+
+      <div class="section-title">Políticas a implementar</div>
+      ${politicasHtml || "<p>Sin recomendaciones.</p>"}
+
+      <div class="section-title">Herramientas recomendadas</div>
+      <div class="tools-grid">${herramientasHtml || ""}</div>
+
+      <div class="report-footer">
+        <button class="btn secondary" id="restartBtn">Hacer otro diagnóstico</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("restartBtn").addEventListener("click", resetAll);
+}
+
+function resetAll() {
+  state = {
+    screen: "intro",
+    currentQuestion: 0,
+    answers: {},
+    report: null,
+    errorMessage: ""
+  };
+  render();
+}
+
+// ---------------- Init ----------------
+render();
+</script>
+</body>
+</html>
